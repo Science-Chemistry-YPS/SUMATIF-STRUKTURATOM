@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sumatif Struktur Atom</title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Menggunakan font Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style untuk kotak yang sudah digunakan */
+        .box.used {
+            background-color: #6b7280 !important; /* bg-gray-500 */
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: scale(0.95);
+        }
+        /* Transisi halus untuk semua kotak */
+        .box {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-3xl">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-800">Papan Kuis: Struktur Atom</h1>
+            <p class="text-lg text-gray-600 mt-2">Pilih satu kotak untuk membuka soal. (Untuk 32 siswa)</p>
+        </header>
+
+        <!-- Papan Permainan -->
+        <div id="game-board" class="grid grid-cols-4 gap-4">
+            <!-- Kotak-kotak akan dibuat oleh JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal (Popup) untuk Soal -->
+    <div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-6">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative transform transition-all scale-95 opacity-0" id="modal-content">
+            <!-- Judul modal ini akan diubah oleh JavaScript -->
+            <h2 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4">Soal</h2>
+            <!-- Teks soal akan dimasukkan di sini -->
+            <div id="question-text" class="text-lg text-gray-700 min-h-[100px]"></div>
+            
+            <!-- Tombol Tutup -->
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <button id="ok-button" class="mt-6 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Selesai
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Daftar 16 soal berdasarkan 5 topik
+        // Diubah menjadi array objek dengan kategori (cat) dan soal (q)
+        const allQuestions = [
+            // Topik 1: Partikel Subatom
+            { cat: "Partikel Subatom", q: "Jelaskan lokasi, muatan, dan massa relatif dari <strong>proton, neutron, dan elektron</strong>!" },
+            { cat: "Partikel Subatom", q: "Tentukan jumlah proton, neutron, dan elektron dari atom <strong><sup>39</sup><sub>19</sub>K</strong>." },
+            { cat: "Partikel Subatom", q: "Sebuah ion <strong>X<sup>2+</sup></strong> memiliki 10 elektron dan 12 neutron. Tentukan nomor atom dan nomor massa dari unsur X tersebut!" },
+
+            // Topik 2: Konfigurasi Elektron Kulit (Bohr)
+            { cat: "Konfigurasi Kulit", q: "Tuliskan konfigurasi elektron (model kulit/Bohr) untuk unsur <strong>Kalsium (Z=20)</strong>. Tentukan golongan dan periodenya!" },
+            { cat: "Konfigurasi Kulit", q: "Suatu unsur berada di <strong>Periode 3, Golongan VIIA</strong>. Berapakah nomor atomnya dan bagaimana konfigurasi elektron kulitnya?" },
+            
+            // Topik 3: Konfigurasi Elektron Subkulit (SPD)
+            { cat: "Konfigurasi Subkulit", q: "Tuliskan konfigurasi elektron subkulit (1s<sup>2</sup> 2s<sup>2</sup>...) untuk unsur <strong>Besi (Z=26)</strong>." },
+            { cat: "Konfigurasi Subkulit", q: "Berdasarkan konfigurasi elektron dari <strong>Z=26 (Besi)</strong>, tentukan <strong>Periode, Golongan, dan Blok</strong>-nya (s, p, d, atau f)." },
+            { cat: "Konfigurasi Subkulit", q: "Gambarkan diagram orbital untuk elektron valensi dari unsur <strong>Belerang (Z=16)</strong>. Ada berapa elektron yang tidak berpasangan?" },
+            { cat: "Konfigurasi Subkulit", q: "Jelaskan secara singkat <strong>Aturan Hund</strong> dan <strong>Prinsip Aufbau</strong> dalam pengisian orbital elektron." },
+
+            // Topik 4: Bilangan Kuantum
+            { cat: "Bilangan Kuantum", q: "Tentukan keempat bilangan kuantum (<strong>n, l, m, dan s</strong>) untuk elektron <strong>terakhir</strong> dari atom <strong>Klorin (Z=17)</strong>." },
+            { cat: "Bilangan Kuantum", q: "Jelaskan apa yang dimaksud dengan <strong>Asas Larangan Pauli</strong> terkait bilangan kuantum." },
+            { cat: "Bilangan Kuantum", q: "Satu set bilangan kuantum elektron terakhir suatu atom adalah <strong>n=3, l=2, m=0, s=-1/2</strong>. Tentukan golongan dan periode unsur tersebut!" },
+            { cat: "Bilangan Kuantum", q: "Berapakah nilai-nilai yang mungkin untuk bilangan kuantum magnetik (<strong>m</strong>) jika bilangan kuantum azimut (<strong>l</strong>) adalah <strong>2</strong>? Subkulit apakah yang diwakili oleh l=2?" },
+
+            // Topik 5: Isotop
+            { cat: "Isotop", q: "Definisikan apa yang dimaksud dengan <strong>Isotop</strong>? Berikan satu contoh pasangan isotop!" },
+            { cat: "Isotop", q: "Apa persamaan dan perbedaan utama antara dua buah <strong>isotop</strong> dari suatu unsur?" },
+            { cat: "Isotop", q: "Dari atom-atom berikut: <strong><sup>12</sup><sub>6</sub>C, <sup>13</sup><sub>6</sub>C, <sup>14</sup><sub>7</sub>N, <sup>14</sup><sub>6</sub>C</strong>, tunjukkan pasangan manakah yang merupakan <strong>isotop</strong>?" },
+            
+            // --- BANK SOAL TAMBAHAN (17-32) ---
+
+            // Topik 1
+            { cat: "Partikel Subatom", q: "Siapakah penemu <strong>elektron</strong>? Jelaskan secara singkat percobaan yang digunakannya!" },
+            { cat: "Partikel Subatom", q: "Jelaskan kelemahan utama dari <strong>model atom Rutherford</strong>!" },
+            { cat: "Partikel Subatom", q: "Sebuah ion <strong>Y³⁻</strong> memiliki 18 elektron dan 16 neutron. Tentukan nomor atom dan nomor massa dari unsur Y tersebut!" },
+
+            // Topik 2
+            { cat: "Konfigurasi Kulit", q: "Tuliskan konfigurasi elektron kulit untuk atom <strong>Bromin (Z=35)</strong>. Tentukan golongan dan periodenya!" },
+            { cat: "Konfigurasi Kulit", q: "Apa yang dimaksud dengan <strong>elektron valensi</strong>? Berapa elektron valensi dari unsur <strong>Nitrogen (Z=7)</strong>?" },
+            { cat: "Konfigurasi Kulit", q: "Suatu unsur Z memiliki konfigurasi elektron <strong>2.8.2</strong>. Di periode dan golongan berapakah ia terletak?" },
+
+            // Topik 3
+            { cat: "Konfigurasi Subkulit", q: "Tuliskan konfigurasi elektron subkulit untuk ion <strong>Fe³⁺ (Z=26)</strong>!" },
+            { cat: "Konfigurasi Subkulit", q: "Gambarkan diagram orbital untuk elektron valensi unsur <strong>Mangan (Z=25)</strong>. Ada berapa elektron yang tidak berpasangan?" },
+            { cat: "Konfigurasi Subkulit", q: "Unsur X berada di <strong>Periode 4, Golongan VIB</strong>. Tuliskan konfigurasi elektron subkulitnya! (Hati-hati, ini pengecualian!)" },
+            { cat: "Konfigurasi Subkulit", q: "Prinsip apakah yang dilanggar oleh konfigurasi elektron berikut: <strong>1s² 2s³ 2p¹</strong>? Jelaskan!" },
+
+            // Topik 4
+            { cat: "Bilangan Kuantum", q: "Suatu elektron memiliki bilangan kuantum utama (n) = 4 dan azimut (l) = 1. Di subkulit apakah elektron itu berada?" },
+            { cat: "Bilangan Kuantum", q: "Manakah dari set bilangan kuantum berikut yang <strong>TIDAK diizinkan</strong>? Jelaskan mengapa! <br><strong>(n=2, l=2, m=0, s=+1/2)</strong>" },
+            { cat: "Bilangan Kuantum", q: "Tentukan keempat bilangan kuantum (n, l, m, s) untuk elektron terakhir pada atom <strong>Oksigen (Z=8)</strong>." },
+            { cat: "Bilangan Kuantum", q: "Jelaskan bentuk orbital yang ditentukan oleh bilangan kuantum azimut <strong>l=0</strong> dan <strong>l=1</strong>!" },
+
+            // Topik 5
+            { cat: "Isotop", q: "Perhatikan dua atom berikut: <strong><sup>16</sup><sub>8</sub>O</strong> dan <strong><sup>18</sup><sub>8</sub>O</strong>. Apakah keduanya merupakan <strong>isotop</strong>? Jelaskan alasanmu!" },
+            { cat: "Isotop", q: "Massa atom rata-rata Klorin (Cl) di alam adalah 35,5 sma. Ini adalah gabungan dari dua isotop utamanya. Sebutkan dua isotop klorin tersebut!" }
+        ];
+
+        // Palet warna yang menarik
+        const colors = [
+            'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
+            'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
+            'bg-red-600', 'bg-blue-600', 'bg-green-600', 'bg-yellow-600',
+            'bg-purple-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600'
+        ];
+
+        // Acak urutan warna dan soal (opsional, tapi lebih seru)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        shuffle(allQuestions); // Mengacak array objek soal
+        shuffle(colors);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalTitle = document.getElementById('modal-title'); // Ambil elemen judul modal
+            const questionText = document.getElementById('question-text');
+            const closeModal = document.getElementById('close-modal');
+            const okButton = document.getElementById('ok-button');
+
+            // Membuat 32 kotak
+            for (let i = 0; i < 32; i++) {
+                const item = allQuestions[i]; // Ambil objek soal saat ini
+                
+                const box = document.createElement('div');
+                // Ubah layout kotak menjadi flex-col (kolom vertikal)
+                box.className = `box flex flex-col items-center justify-center p-4 text-white rounded-2xl shadow-lg cursor-pointer transform hover:scale-105 hover:shadow-xl`;
+                box.classList.add(colors[i % colors.length]); // Terapkan warna
+
+                // Buat elemen untuk judul kategori
+                const categoryTitle = document.createElement('div');
+                categoryTitle.className = 'text-sm font-bold uppercase tracking-wider text-center';
+                categoryTitle.textContent = item.cat; // Tampilkan kategori
+                box.appendChild(categoryTitle);
+
+                // Buat elemen untuk nomor kotak
+                const boxNumber = document.createElement('div');
+                boxNumber.className = 'text-5xl font-extrabold mt-2';
+                boxNumber.textContent = i + 1; // Tampilkan nomor kotak
+                box.appendChild(boxNumber);
+                
+                box.dataset.questionIndex = i; // Simpan indeks soal
+
+                // Tambahkan event listener untuk membuka soal
+                box.addEventListener('click', () => {
+                    if (box.classList.contains('used')) {
+                        return; // Jika sudah dibuka, jangan lakukan apa-apa
+                    }
+
+                    // Tandai sebagai sudah digunakan
+                    box.classList.add('used');
+                    // Ganti isi kotak dengan tanda centang besar
+                    box.innerHTML = '<span class="text-6xl font-bold">✔</span>';
+
+                    // Tampilkan soal di modal
+                    const currentItem = allQuestions[box.dataset.questionIndex];
+                    modalTitle.textContent = `Soal: ${currentItem.cat}`; // Set judul modal
+                    questionText.innerHTML = currentItem.q; // Set teks soal
+                    
+                    // Tampilkan modal dengan animasi
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    setTimeout(() => {
+                        modalContent.classList.add('scale-100', 'opacity-100');
+                        modalContent.classList.remove('scale-95', 'opacity-0');
+                    }, 50); // Sedikit delay untuk transisi
+                });
+
+                gameBoard.appendChild(box);
+            }
+
+            // Fungsi untuk menutup modal
+            const closeTheModal = () => {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 200); // Sesuaikan dengan durasi transisi
+            };
+
+            // Event listener untuk tombol tutup (X) dan tombol OK
+            closeModal.addEventListener('click', closeTheModal);
+            okButton.addEventListener('click', closeTheModal);
+        });
+
+    </script>
+</body>
+</html>
